@@ -1,0 +1,20 @@
+{
+  "name": "lume_social-webapp",
+  "version": "1.0.0",
+  "description": "an social media app ",
+  "keywords": [
+    "lume"
+  ],
+  "license": "ISC",
+  "author": "ashwini khunte",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "mongoose": "^8.14.2"
+  }
+}
