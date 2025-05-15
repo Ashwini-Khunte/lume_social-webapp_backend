@@ -17,3 +17,12 @@ export const signupSchema = z.object({
         .regex(/[0-9]/, "Password must contain at least one number")
         .regex(/[@$!%*?&#]/, "Password must contain at least one special character"),
 });
+
+export const loginSchema = z.object({
+    userName: z
+        .string()
+        .min(3, "Username must be at least 3 characters")
+        .max(30, "Username must be at most 30 characters"),
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(8),
+})
