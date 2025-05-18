@@ -1,16 +1,13 @@
 import { Router } from "express";
-import { registerUser,loginUser, refreshTokenController } from "../controllers/auth.controller.js";
-import {getProfile} from "../controllers/user.controller.js"
+import {deleteProfile, editProfile, getProfile} from "../controllers/user.controller.js"
 import { verifyToken } from "../middlewares/auth.midleware.js";
 
-const router = Router()
+const UserRouter = Router()
 
-router.route("/signup").post(registerUser)
+UserRouter.get("/me", verifyToken, getProfile);
 
-router.route("/login").post(loginUser)
+UserRouter.put("/me", verifyToken, editProfile);
 
-router.route("/refresh-token").post(refreshTokenController)
+UserRouter.delete("/me", verifyToken, deleteProfile)
 
-router.route("/me").get(verifyToken, getProfile);
-
-export default router;
+export default UserRouter;

@@ -25,11 +25,18 @@ export const registerUser = asyncHandler(async (req, res) => {
 
     const user = await User.create({name, userName, email, password});
 
-    const tokens = generateTokens({id: user._id})
+    const {accessToken, refreshToken} = generateTokens({id: user._id})
+
+    res.cookie("accessToken", accessToken, {
+        httpOnly: true,
+        secure: false, // set true in production with
+        sameSite: "lax",
+        maxAge: 60 * 60 * 1000, // 1 hour
+    });
 
     res.status(200).json({
         message: `User ${userName} register successfully!`,
-        tokens,
+        tokens: {accessToken, refreshToken},
         user: {
             id: user._id,
             userName: user.userName,
@@ -63,11 +70,17 @@ export const loginUser = asyncHandler(async (req, res) => {
 
     const {accessToken, refreshToken} = generateTokens({id: user._id});
 
-    res.cookie("token", accessToken, {
+    res.cookie("accessToken", accessToken, {
         httpOnly: true,
         secure: false, // set true in production with
         sameSite: "lax",
         maxAge: 60 * 60 * 1000, // 1 hour
+    })
+    res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: false, // set true in production with
+        sameSite: "lax",
+        maxAge: 1000 * 60 * 60 * 24 * 30 // 30 days
     });
 
     res.status(200).json({
@@ -81,25 +94,59 @@ export const loginUser = asyncHandler(async (req, res) => {
     })
 })
 
-export const refreshTokenController = asyncHandler(async(req, res) => {
-    
-    const {refreshToken} = req.body;
+export const logoutUser = asyncHandler(async(req, res) => {
+    res.clearCookie("accessToken", {
+        httpOnly: true,
+        secure: false, // set to true in production
+        sameSite: "lax",
+    });
 
-    if(!refreshToken) {
-        return res.status(400).json({
-            error: "Refresh token is required"
-        })
+    res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+    });
+
+
+    res.status(200).json({
+        message: "Logged out successfully"
+    });
+})
+
+export const refreshTokenController = async (req, res) => {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+        return res.status(400).json({ error: "No refresh token provided" });
     }
 
     try {
-        const decoded = verifyRefreshToken(refreshToken); // ← synchronous, may throw
-        const tokens = generateTokens({ id: decoded.id });
+        // Assuming verifyRefreshToken is synchronous; remove await if not needed
+        const decoded = verifyRefreshToken(refreshToken);
+        
+        if (!decoded.id) {
+            return res.status(403).json({ error: "Invalid token payload" });
+        }
 
-        res.status(200).json({ 
-        message: "New access token generated",
-        tokens,
-    });
+        const { accessToken, refreshToken: newRefreshToken } = generateTokens({ id: decoded.id });
+
+        const isSecure = process.env.NODE_ENV === "production";
+        res.cookie("accessToken", accessToken, {
+            httpOnly: true,
+            secure: isSecure,
+            sameSite: "lax",
+            maxAge: 60 * 60 * 1000,
+        });
+        res.cookie("refreshToken", newRefreshToken, {
+            httpOnly: true,
+            secure: isSecure,
+            sameSite: "lax",
+            maxAge: 1000 * 60 * 60 * 24 * 30,
+        });
+
+        return res.status(200).json({ message: "New access token generated" });
     } catch (error) {
+        console.error("Refresh token error:", error.message);
         return res.status(403).json({ error: "Invalid or expired refresh token" });
     }
-})
+};
