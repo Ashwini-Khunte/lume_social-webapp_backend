@@ -25,8 +25,15 @@ const postSchema = new Schema({
     },
     createdBy: {
         type: Schema.Types.ObjectId,
-        ref: "User"
+        ref: "User",
+        required: true,
     },
+    moons: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: "User",
+        }
+    ]
     
 }, {timestamps: true})
 
