@@ -91,7 +91,7 @@ export const updatePost = asyncHandler(async (req, res) => {
     const updatedPost = await post.save();
 
     res.status(200).json({
-        message: "Post updated successfull",
+        message: "Post updated successfully",
         post: updatedPost,
     })
 

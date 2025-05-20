@@ -30,3 +30,57 @@ export const createComment = asyncHandler(async (req, res) => {
     })
 
 })
+
+export const updateComment = asyncHandler(async (req, res) => {
+    const {title} = req.body;
+    const user = req.user.id;
+    const commentId = req.params.id;
+
+    const comment = await Comment.findById(commentId)
+
+    if (!comment) {
+        return res.status(404).json({
+            message: "Comment not Found"
+        })
+    }
+
+    if (comment.userId.toString() !== user) {
+        return res.status(403).json({
+            message: "You are not allowed to edit this comment"
+        })
+    }
+
+    comment.title = title || comment.title
+
+    const updatedComment = await comment.save();
+
+    res.status(200).json({
+        message: "Post updated successfully",
+        comment: updatedComment,
+    })
+})
+
+export const deleteComment = asyncHandler(async (req, res) => {
+    const commentId = req.params.id;
+    const userId = req.user.id;
+
+    const comment = await Comment.findById(commentId)
+
+    if (!comment) {
+        return res.status(404).json({
+            message: "Comment not found"
+        })
+    }
+
+    if (comment.userId.toString() !== userId) {
+        return res.status(402).json({
+            message: "You are not allowed to delete this comment"
+        })
+    }
+
+    await Comment.findOneAndDelete(commentId);
+
+    res.status(200).json({
+        message: "Comment deleted successfully"
+    })
+})
