@@ -1,3 +1,5 @@
+import { Follow } from "../models/follow.model.js";
+import { Post } from "../models/post.model.js";
 import { User } from "../models/user.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
@@ -8,9 +10,27 @@ export const getProfile = async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
+        const posts = await Post.find({createdBy: user}).sort({createdAt: -1});
+
+        const userId = req.params.id || req.user.id
+
+        if(!userId) {
+            return res.status(400).json({
+                message: "User ID is required"
+            })
+        }
+
+        const followers = await Follow.find({following: userId}).populate("follower", "userName avatar");
+
+        const following = await Follow.find({follower: userId}).populate("following", "userName avatar")
+
         res.status(200).json({
             message: "Profile fetched successfully",
             user,
+            posts,
+            totalPosts: posts.length,
+            followers: followers.map(f => f.follower) ,
+            following: following.map(f => f.following) ,
         });
     } catch (error) {
         res.status(500).json({ error: "Internal server error" });
